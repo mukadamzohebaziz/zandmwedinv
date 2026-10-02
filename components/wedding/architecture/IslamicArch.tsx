@@ -32,9 +32,13 @@ const DEPTH: Record<LayerName, { zoom: number; drift: number; blur: number }> = 
 
 function planeStyle(layer: LayerName) {
   const depth = DEPTH[layer];
+  const baseFilter = theme.arch.filter === "none" ? "" : theme.arch.filter;
+  const blurFilter = depth.blur > 0 ? `blur(${depth.blur}px)` : "";
+  const filter = [baseFilter, blurFilter].filter(Boolean).join(" ") || "none";
+
   return {
-    transform: `translate3d(0, calc(var(--arch-shift) * ${depth.drift.toFixed(2)}%), 0) scale(calc(1 + (var(--arch-scale) - 1) * ${depth.zoom}))`,
-    filter: depth.blur ? `var(--arch-filter) blur(${depth.blur}px)` : "var(--arch-filter)",
+    transform: `translate3d(0, calc(var(--arch-shift, 0) * ${depth.drift.toFixed(2)}%), 0) scale(calc(1 + (var(--arch-scale, 1) - 1) * ${depth.zoom}))`,
+    filter,
   };
 }
 
@@ -67,7 +71,7 @@ export function IslamicArch() {
     <div
       aria-hidden
       className="pointer-events-none fixed inset-y-0 left-1/2 z-[1] w-full max-w-[var(--frame-width)] -translate-x-1/2 overflow-hidden"
-      style={{ opacity: "var(--arch-opacity)" }}
+      style={{ opacity: "var(--arch-opacity, 1)" }}
     >
       {split ? (
         LAYER_ORDER.map((name) => (
@@ -82,7 +86,7 @@ export function IslamicArch() {
             <img
               src={layers[media.arch.layers[name]]}
               alt=""
-              className="h-full w-full object-cover"
+              className="arch-svg h-full w-full object-cover"
               style={planeStyle(name)}
               draggable={false}
             />
@@ -91,7 +95,13 @@ export function IslamicArch() {
       ) : (
         <div className="absolute inset-0">
           {/* eslint-disable-next-line @next/next/no-img-element -- static SVG artwork */}
-          <img src={media.arch.arch} alt="" className="h-full w-full object-cover" style={planeStyle("mid")} draggable={false} />
+          <img 
+            src={media.arch.arch} 
+            alt="" 
+            className="arch-svg h-full w-full object-cover" 
+            style={planeStyle("mid")} 
+            draggable={false} 
+          />
         </div>
       )}
     </div>
