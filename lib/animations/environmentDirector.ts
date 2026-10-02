@@ -107,7 +107,7 @@ function scrollState(): Flat {
 
 function write(values: Flat): void {
   if (!root) return;
-  const changed = lastWritten.length === 0 || values.some((v, i) => Math.abs(v - lastWritten[i]) > 0.0005);
+  const changed = lastWritten.length === 0 || values.some((v, i) => Math.abs(v - lastWritten[i]) > 0.0001);
   if (!changed) return;
   lastWritten = values;
 
@@ -118,7 +118,7 @@ function write(values: Flat): void {
   style.setProperty("--env-glow-y", `${glowY.toFixed(2)}%`);
   style.setProperty("--env-mist", mist.toFixed(3));
   style.setProperty("--env-vignette", vignette.toFixed(3));
-  style.setProperty("--arch-opacity", archOpacity.toFixed(3));
+  style.setProperty("--arch-opacity", archOpacity.toFixed(4));
   style.setProperty("--arch-scale", reduced ? "1" : archScale.toFixed(4));
   style.setProperty("--arch-shift", reduced ? "0" : archShift.toFixed(3));
 
@@ -141,6 +141,7 @@ export function startEnvironment(reducedMotion: boolean): void {
   reduced = reducedMotion;
   root = document.documentElement;
   current = [...flatStates[introKey]];
+  lastWritten = [];
   write(current);
   gsap.ticker.add(tick);
   ScrollTrigger.addEventListener("refresh", measure);
@@ -148,6 +149,11 @@ export function startEnvironment(reducedMotion: boolean): void {
 
 export function setIntroState(key: SceneStateKey): void {
   introKey = key;
+  if (!running && root) {
+    current = [...flatStates[introKey]];
+    lastWritten = [];
+    write(current);
+  }
 }
 
 export function setEnvironmentReducedMotion(value: boolean): void {
@@ -158,6 +164,7 @@ export function setEnvironmentReducedMotion(value: boolean): void {
 /** Cross-fade from the intro state to the scroll-driven environment. */
 export function releaseIntro(): gsap.core.Tween {
   measure();
+  lastWritten = [];
   return gsap.to(intro, { mix: 0, duration: animations.mainReveal.environmentDuration, ease: "power2.inOut" });
 }
 
