@@ -13,7 +13,7 @@
 import { palette } from "./theme";
 
 export const siteConfig = {
-  url: "https://zohebwedsmuskan27dec2026.vercel.app/",
+  url: "https://zandmwedinv.vercel.app/",
 
   title: "Zoheb & Muskan | Wedding Invitation",
 
