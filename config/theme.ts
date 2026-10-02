@@ -67,7 +67,7 @@ export const theme = {
     vignetteColor: "burgundyDark" as SolidPaletteToken,
     /** Colour the base background mixes toward when a scene asks for "warmth". */
     warmthColor: "gold" as SolidPaletteToken,
-    grainOpacity: 0.07,
+    grainOpacity: 0,
     grainTileSize: "520px",
   },
 
