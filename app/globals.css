@@ -1,0 +1,126 @@
+/*
+ * app/globals.css
+ *
+ * Colours are NOT defined here. They come from config/theme.ts and are
+ * injected on <html> as --wm-* custom properties by app/layout.tsx
+ * (lib/theme/cssVariables.ts). This file only maps them to Tailwind
+ * utilities and declares a few structural rules.
+ *
+ * --env-* / --arch-* variables are written live by the environment director
+ * (lib/animations/environmentDirector.ts) while scrolling.
+ */
+
+@import 'tailwindcss';
+
+@theme inline {
+  --font-display: var(--font-display-face), 'Cormorant Garamond', serif;
+  --font-body: var(--font-body-face), 'Inter', sans-serif;
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+
+  --color-background: var(--wm-background);
+  --color-foreground: var(--wm-text-primary);
+  --color-ivory: var(--wm-background);
+  --color-ivory-soft: var(--wm-background-soft);
+  --color-ivory-light: var(--wm-background-light);
+  --color-burgundy: var(--wm-burgundy);
+  --color-burgundy-dark: var(--wm-burgundy-dark);
+  --color-burgundy-soft: var(--wm-burgundy-soft);
+  --color-gold: var(--wm-gold);
+  --color-gold-light: var(--wm-gold-light);
+  --color-ink: var(--wm-text-primary);
+  --color-ink-soft: var(--wm-text-secondary);
+  --color-paper: var(--wm-white);
+  --color-line: var(--wm-border);
+  --color-gold-line: var(--wm-gold-border);
+  --color-glass: var(--wm-glass-background);
+}
+
+:root {
+  /* Runtime font variables used by lib/theme/typeStyle.ts (inline styles). */
+  --font-display: var(--font-display-face), "Cormorant Garamond", serif;
+  --font-body: var(--font-body-face), "Inter", sans-serif;
+
+  --env-bg: 245 239 228;
+  --env-glow: 0.35;
+  --env-glow-y: 48%;
+  --env-mist: 0;
+  --env-vignette: 0.12;
+  --arch-opacity: 0;
+  --arch-scale: 1.06;
+  --arch-shift: 0;
+}
+
+html {
+  background-color: rgb(var(--env-bg));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background-color: rgb(var(--env-bg));
+  color: var(--wm-text-primary);
+  font-family: var(--font-body);
+  overscroll-behavior-y: none;
+}
+
+html.is-locked,
+html.is-locked body {
+  overflow: hidden;
+  height: 100%;
+}
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+::selection {
+  background: var(--wm-burgundy);
+  color: var(--wm-white);
+}
+
+/* The portrait invitation frame: 100% on phones, centred at --frame-width on desktop. */
+.invitation-frame {
+  width: 100%;
+  max-width: var(--frame-width);
+  margin-inline: auto;
+  container-type: inline-size;
+}
+
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--wm-gold), transparent);
+}
+
+:focus-visible {
+  outline: 1.5px solid var(--wm-burgundy);
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+
+@keyframes eq-bar {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
