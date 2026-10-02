@@ -42,12 +42,12 @@
   --font-body: var(--font-body-face), "Inter", sans-serif;
 
   --env-bg: 245 239 228;
-  --env-glow: 0.35;
+  --env-glow: 0;
   --env-glow-y: 48%;
   --env-mist: 0;
-  --env-vignette: 0.12;
-  --arch-opacity: 0;
-  --arch-scale: 1.06;
+  --env-vignette: 0;
+  --arch-opacity: 1;
+  --arch-scale: 1;
   --arch-shift: 0;
 }
 
@@ -85,6 +85,14 @@ html.lenis body {
 ::selection {
   background: var(--wm-burgundy);
   color: var(--wm-white);
+}
+
+/* Ensure background arch SVG elements are rendered with crisp vector accuracy */
+svg.arch-svg,
+.arch-container svg {
+  shape-rendering: geometricPrecision;
+  text-rendering: geometricPrecision;
+  image-rendering: high-quality;
 }
 
 /* The portrait invitation frame: 100% on phones, centred at --frame-width on desktop. */
