@@ -71,10 +71,10 @@ export const theme = {
     grainTileSize: "520px",
   },
 
-  /** Tonal treatment applied to the supplied arch artwork so it sits in the ivory palette. */
+  /** Tonal treatment applied to the supplied arch artwork so it sits in the palette cleanly without modification. */
   arch: {
-    filter: "saturate(0.5) sepia(0.22) brightness(1.03)",
-    backBlurPx: 0.6,
+    filter: "none",
+    backBlurPx: 0,
   },
 
   /** Embedded Google Map treatment so the map belongs to the scene. */
