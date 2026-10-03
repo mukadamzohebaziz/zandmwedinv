@@ -3,228 +3,130 @@
 /**
  * components/wedding/envelope/EnvelopeIntro.tsx
  *
- * Visual Improvements:
- * - Theme-matched animated gradient background (Ivory, Sand, Gold, Burgundy)
- * - Elevated envelope shadows and depth planes
- * - Luxury typographic badge styling for "TAP TO OPEN"
+ * Video-Based Curtain Reveal Component
+ * -------------------------------------
+ * Replaces the SVG envelope animation with an MP4 curtain reveal video.
+ *
+ * Flow:
+ * 1. Initial State: Video stays paused at frame 0 (curtains closed with burgundy bow).
+ * 2. User Tap: Triggers `handlePlay()`, hiding the prompt badge and starting video playback.
+ * 3. Mid-Playback: Fires `onReveal()` when curtains start opening.
+ * 4. Video End: Triggers a 600ms CSS crossfade out to cleanly transition into the main site.
  */
 
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
-import gsap from "gsap";
-import { animations } from "@/config/animations";
-import { media } from "@/config/media";
+import { useRef, useState, type KeyboardEvent } from "react";
 import { weddingData } from "@/config/weddingData";
-import { assetFailed, getAssetText } from "@/lib/assets/assetStore";
-import { playEnvelopeEntrance, playEnvelopeOpening, type EnvelopeRefs } from "@/lib/animations/envelopeAnimation";
 import { playSparkle } from "@/lib/audio/audioController";
-import { revokeLayerUrls, splitSvgLayers, type LayerUrls } from "@/lib/svg/splitSvgLayers";
-import { useExperience } from "@/lib/store/experienceStore";
 import { typeStyle } from "@/lib/theme/typeStyle";
 
-type LayerName = keyof typeof media.envelope.layers;
-type LayerId = (typeof media.envelope.layers)[LayerName];
-
-const Z: Record<LayerName | "card", number> = {
-  body: 0,
-  card: 2,
-  flapLeft: 3,
-  flapRight: 3,
-  flapBottom: 4,
-  flapTop: 5,
-  waxSeal: 6,
-};
-
-const ORIGIN: Partial<Record<LayerName, string>> = {
-  flapTop: "50% 0%",
-  flapLeft: "0% 50%",
-  flapRight: "100% 50%",
-  flapBottom: "50% 100%",
-  waxSeal: "50% 44%",
-};
-
 type Props = {
-  onOpenStart: () => void;
-  onReveal: () => void;
-  onComplete: () => void;
+  onOpenStart: () => void; // Triggered immediately when user taps to initiate audio/state changes
+  onReveal: () => void;    // Triggered mid-animation as the background scene becomes visible
+  onComplete: () => void;  // Triggered after video ends to unmount intro overlay
 };
 
 export function EnvelopeIntro({ onOpenStart, onReveal, onComplete }: Props) {
-  const reduced = useExperience((s) => s.reducedMotion);
-  const [layers, setLayers] = useState<LayerUrls<LayerId> | null>(null);
-  const openedRef = useRef(false);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
+  // Reference to the HTML5 video element for imperative playback control (.play())
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const stageRef = useRef<HTMLDivElement>(null);
-  const rigRef = useRef<HTMLDivElement>(null);
-  const promptRef = useRef<HTMLParagraphElement>(null);
-  const cardRef = useRef<HTMLDivElement>(null);
-  const shadowRef = useRef<HTMLDivElement>(null);
-  const layerRefs = useRef<Partial<Record<LayerName, HTMLDivElement | null>>>({});
+  // Local state flags to drive component lifecycle animations
+  const [hasStarted, setHasStarted] = useState(false); // Tracks if user has tapped screen
+  const [isFadingOut, setIsFadingOut] = useState(false); // Controls the final opacity fade-out transition
 
-  useEffect(() => {
-    const text = getAssetText("envelope");
-    const urls = text ? splitSvgLayers(text, Object.values(media.envelope.layers) as LayerId[]) : {};
-    setLayers(urls);
-    return () => revokeLayerUrls(urls);
-  }, []);
+  /**
+   * Primary interaction handler triggered when user clicks or taps anywhere on the screen.
+   */
+  const handlePlay = () => {
+    // Prevent duplicate triggers if the video is already playing
+    if (hasStarted) return;
 
-  const split = !!layers && (Object.keys(media.envelope.layers) as LayerName[]).every((n) => layers[media.envelope.layers[n]]);
-  const simplified = reduced && animations.reducedMotion.simplifyEnvelope;
+    // 1. Mark state as started (fades out the "TAP TO UNVEIL" text prompt)
+    setHasStarted(true);
 
-  const refs = (): EnvelopeRefs => ({
-    rig: rigRef.current as HTMLElement,
-    prompt: promptRef.current,
-    seal: layerRefs.current.waxSeal ?? null,
-    flapTop: layerRefs.current.flapTop ?? null,
-    flapLeft: layerRefs.current.flapLeft ?? null,
-    flapRight: layerRefs.current.flapRight ?? null,
-    flapBottom: layerRefs.current.flapBottom ?? null,
-    card: cardRef.current,
-    shadow: shadowRef.current,
-  });
+    // 2. Play optional entrance audio effect
+    playSparkle();
 
-  useLayoutEffect(() => {
-    if (!layers || !rigRef.current) return;
-    const tl = playEnvelopeEntrance(refs(), simplified);
-    stageRef.current?.focus({ preventScroll: true });
-    return () => {
-      tl.kill();
-    };
-  }, [layers, simplified]);
-
-  useEffect(() => () => void timelineRef.current?.kill(), []);
-
-  const open = () => {
-    if (openedRef.current || !rigRef.current) return;
-    openedRef.current = true;
+    // 3. Inform parent component that the opening sequence has begun
     onOpenStart();
-    timelineRef.current = playEnvelopeOpening(refs(), simplified || !split, {
-      onSparkle: playSparkle,
-      onReveal,
-      onComplete,
-    });
-  };
 
-  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      open();
+    // 4. Start video playback
+    if (videoRef.current) {
+      videoRef.current
+        .play()
+        .then(() => {
+          // Trigger `onReveal()` as the video begins playing so background elements prepare
+          onReveal();
+        })
+        .catch((err) => {
+          console.error("Video autoplay policy blocked playback:", err);
+          // Fallback: Immediately complete transition if media playback fails (e.g. low power mode)
+          onComplete();
+        });
     }
   };
 
-  const showArtwork = !!layers && !assetFailed("envelope");
+  /**
+   * Event handler fired automatically by the browser when `curtains.mp4` reaches its final frame.
+   */
+  const handleEnded = () => {
+    // 1. Trigger CSS opacity fade out (opacity-100 -> opacity-0 over 600ms)
+    setIsFadingOut(true);
+
+    // 2. Wait for the 600ms CSS transition to complete before unmounting via onComplete
+    setTimeout(() => {
+      onComplete();
+    }, 600);
+  };
+
+  /**
+   * Accessibility handler to allow keyboard users to open the scene using Space or Enter key.
+   */
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      handlePlay();
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center overflow-hidden">
-      {/* Dynamic Keyframes for Theme-Matched Animated Background */}
-      <style jsx global>{`
-        @keyframes envelopeGradientShift {
-          0% {
-            background-position: 0% 50%;
-          }
-          50% {
-            background-position: 100% 50%;
-          }
-          100% {
-            background-position: 0% 50%;
-          }
-        }
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={weddingData.text.envelopeAriaLabel}
+      onClick={handlePlay}
+      onKeyDown={handleKeyDown}
+      // Fixed viewport overlay styled with z-40 to sit above persistent background atmosphere
+      className={`fixed inset-0 z-40 flex cursor-pointer items-center justify-center bg-[#0F0F12] outline-none transition-opacity duration-600 ease-out ${
+        isFadingOut ? "pointer-events-none opacity-0" : "opacity-100"
+      }`}
+    >
+      {/* 9:16 Aspect-Ratio Container Frame constrained for mobile-first viewport design */}
+      <div className="relative h-svh w-full max-w-[430px] overflow-hidden shadow-2xl">
+        {/* HTML5 Video Element rendering public/assets/curtains.mp4 */}
+        <video
+          ref={videoRef}
+          src="/assets/curtains.mp4"
+          playsInline // Essential for iOS Safari to play video inline rather than launching native fullscreen
+          muted       // Required for instant playback on iOS/Android without click block
+          preload="auto"
+          onEnded={handleEnded} // Fired when curtains are completely open at final frame
+          className="size-full object-cover"
+        />
 
-        .animated-ivory-burgundy-bg {
-          background: linear-gradient(
-            135deg,
-            #FAF7F0 0%,
-            #EEE5D6 25%,
-            #D0BC91 50%,
-            #641F2A 78%,
-            #42131C 100%
-          );
-          background-size: 220% 220%;
-          animation: envelopeGradientShift 16s ease infinite;
-        }
-      `}</style>
-
-      {/* Animated Color Gradient Background Layer */}
-      <div className="animated-ivory-burgundy-bg pointer-events-none absolute inset-0 size-full" />
-
-      {/* Subtle Central Radial Glow Behind Envelope */}
-      <div 
-        aria-hidden
-        className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_48%,rgba(255,253,248,0.6)_0%,transparent_65%)] mix-blend-soft-light" 
-      />
-
-      {/* Interactive Main Envelope Stage Container */}
-      <div
-        ref={stageRef}
-        role="button"
-        tabIndex={0}
-        aria-label={weddingData.text.envelopeAriaLabel}
-        onClick={open}
-        onKeyDown={handleKeyDown}
-        className="invitation-frame relative z-10 flex h-svh cursor-pointer items-center justify-center px-[var(--gutter)] outline-none"
-        style={{ perspective: `${animations.envelope.perspective}px` }}
-      >
+        {/* Floating Call-To-Action Badge Layer */}
         <div
-          ref={rigRef}
-          className="relative aspect-[3/2] w-[92%] opacity-0 transition-transform duration-300 ease-out hover:scale-[1.01]"
-          style={{ perspective: `${animations.envelope.perspective}px`, transformStyle: "preserve-3d" }}
+          aria-hidden
+          // Positioned in lower third to avoid obstructing the burgundy sash center bow
+          className={`pointer-events-none absolute inset-x-0 bottom-[20%] flex flex-col items-center justify-center transition-all duration-500 ${
+            hasStarted ? "translate-y-3 opacity-0" : "opacity-100"
+          }`}
         >
-          {/* Realistic Multi-Layer Envelope Drop Shadow */}
-          <div
-            ref={shadowRef}
-            aria-hidden
-            className="absolute -bottom-[12%] left-[4%] right-[4%] h-[20%] rounded-[50%] bg-[#2A0B10]/35 blur-2xl transition-all duration-500"
-          />
-
-          {/* Invitation Card inside the Envelope */}
-          <div
-            ref={cardRef}
-            className="absolute inset-x-[6%] top-[5%] bottom-[7%] flex flex-col items-center justify-center gap-3 border border-gold-line bg-paper px-6 text-burgundy shadow-lg"
-            style={{ zIndex: Z.card }}
+          <span
+            className="inline-flex items-center rounded-full border border-[#B79A68]/40 bg-[#FFFDF8]/20 px-6 py-2.5 text-[0.72rem] font-medium tracking-[0.3em] text-[#FFFDF8] uppercase shadow-lg backdrop-blur-md transition-transform duration-300 hover:scale-105"
+            style={{ ...typeStyle("prompt") }}
           >
-            <span aria-hidden className="gold-rule w-16" />
-            <span style={typeStyle("initials")}>{weddingData.couple.initials}</span>
-            <span aria-hidden className="gold-rule w-16" />
-          </div>
-
-          {/* SVG Artwork Planes */}
-          {showArtwork &&
-            (split ? (
-              (Object.keys(media.envelope.layers) as LayerName[]).map((name) => (
-                <div
-                  key={name}
-                  ref={(el) => {
-                    layerRefs.current[name] = el;
-                  }}
-                  aria-hidden
-                  className="pointer-events-none absolute inset-0 drop-shadow-[0_4px_8px_rgba(66,19,28,0.12)]"
-                  style={{ zIndex: Z[name], transformOrigin: ORIGIN[name] ?? "50% 50%", backfaceVisibility: "visible" }}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element -- runtime blob URL from split SVG */}
-                  <img src={layers[media.envelope.layers[name]]} alt="" className="size-full" draggable={false} />
-                </div>
-              ))
-            ) : (
-              <div aria-hidden className="pointer-events-none absolute inset-0 drop-shadow-[0_10px_20px_rgba(66,19,28,0.2)]" style={{ zIndex: Z.flapTop }}>
-                {/* eslint-disable-next-line @next/next/no-img-element -- static SVG artwork */}
-                <img src={media.envelope.envelope} alt="" className="size-full" draggable={false} />
-              </div>
-            ))}
-
-          {/* Elevated Call-To-Action Text Pill */}
-          <p
-            ref={promptRef}
-            aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-[68%] flex justify-center text-center opacity-0"
-            style={{ zIndex: 7 }}
-          >
-            <span 
-              className="inline-flex items-center rounded-full border border-[#B79A68]/40 bg-[#FFFDF8]/90 px-5 py-1.5 text-[0.72rem] font-medium tracking-[0.25em] text-[#641F2A] uppercase shadow-md backdrop-blur-md transition-all duration-300"
-              style={{ ...typeStyle("prompt") }}
-            >
-              {weddingData.text.envelopePrompt}
-            </span>
-          </p>
+            TAP TO UNVEIL
+          </span>
         </div>
       </div>
     </div>
