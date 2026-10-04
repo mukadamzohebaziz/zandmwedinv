@@ -3,20 +3,16 @@
  *
  * Every asset path used by the invitation. No component references a file
  * path directly — they all read from here.
- *
- * Only two real 3D models exist (lantern + medallion). The envelope and the
- * arch are layered SVG compositions whose named groups are listed in
- * `envelope.layers` / `arch.layers`; those IDs must match the supplied SVGs.
- *
- * `preload` lists what the preloader fetches before the envelope appears.
- * Each entry is optional: if it fails the preloader logs it, marks it failed
- * in the asset store, and the consuming component renders its fallback.
  */
 
 export const media = {
   audio: {
     background: "/assets/bg-music.mp3",
     envelopeSparkle: "/assets/sparkles.mp3",
+  },
+
+  video: {
+    curtains: "/assets/curtains.mp4",
   },
 
   branding: {
@@ -65,6 +61,8 @@ export const media = {
     { key: "music", kind: "binary", url: "/assets/bg-music.mp3" },
     { key: "sparkle", kind: "binary", url: "/assets/sparkles.mp3" },
     { key: "grain", kind: "image", url: "/assets/textures/grain.jpg" },
+    // Preloads the MP4 video into HTTP cache during preloader execution
+    { key: "curtains", kind: "binary", url: "/assets/curtains.mp4" },
   ] as const,
 } as const;
 
