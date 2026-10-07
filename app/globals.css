@@ -52,12 +52,12 @@
 }
 
 html {
-  background-color: rgb(var(--env-bg));
+  background-color: #000000;
   -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background-color: rgb(var(--env-bg));
+  background-color: #000000;
   color: var(--wm-text-primary);
   font-family: var(--font-body);
   overscroll-behavior-y: none;
@@ -101,6 +101,8 @@ svg.arch-svg,
   max-width: var(--frame-width);
   margin-inline: auto;
   container-type: inline-size;
+  background-color: rgb(var(--env-bg));
+  min-height: 100vh;
 }
 
 .gold-rule {
