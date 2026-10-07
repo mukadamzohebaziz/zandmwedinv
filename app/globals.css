@@ -98,11 +98,13 @@ svg.arch-svg,
 /* The portrait invitation frame: 100% on phones, centred at --frame-width on desktop. */
 .invitation-frame {
   width: 100%;
-  max-width: var(--frame-width);
+  max-width: var(--frame-width, 430px);
   margin-inline: auto;
+  position: relative;
   container-type: inline-size;
   background-color: rgb(var(--env-bg));
   min-height: 100vh;
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
 }
 
 .gold-rule {
