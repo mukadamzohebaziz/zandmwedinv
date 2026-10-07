@@ -125,30 +125,32 @@ export function WeddingExperience() {
   const show3D = phase !== "preloading" && webgl;
 
   return (
-    <>
-      <Atmosphere />
-      <IslamicArch />
-      {show3D && <ThreeScene />}
-      <ThreeDError />
+    <div className="w-full min-h-screen bg-black flex justify-center overflow-x-hidden">
+      <div className="invitation-frame relative min-h-screen w-full max-w-[430px] shadow-2xl">
+        <Atmosphere />
+        <IslamicArch />
+        {show3D && <ThreeScene />}
+        <ThreeDError />
 
-      {phase === "preloading" && <WeddingPreloader onComplete={handlePreloaded} />}
-      {phase !== "preloading" && envelopeMounted && (
-        <EnvelopeIntro onOpenStart={handleOpenStart} onReveal={handleReveal} onComplete={handleEnvelopeDone} />
-      )}
+        {phase === "preloading" && <WeddingPreloader onComplete={handlePreloaded} />}
+        {phase !== "preloading" && envelopeMounted && (
+          <EnvelopeIntro onOpenStart={handleOpenStart} onReveal={handleReveal} onComplete={handleEnvelopeDone} />
+        )}
 
-      <main ref={mainRef} inert={phase !== "revealed"} className="relative z-10 opacity-0">
-        <BismillahScene />
-        <InvitationScene />
-        <CoupleScene />
-        <DateRevealScene />
-        <EventsScenes />
-        <ClosingScene />
-        <ComplimentsScene />
-        <FinaleScene />
-      </main>
+        <main ref={mainRef} inert={phase !== "revealed"} className="relative z-10 opacity-0">
+          <BismillahScene />
+          <InvitationScene />
+          <CoupleScene />
+          <DateRevealScene />
+          <EventsScenes />
+          <ClosingScene />
+          <ComplimentsScene />
+          <FinaleScene />
+        </main>
 
-      <SoundToggle />
-      <BackgroundMusic />
-    </>
+        <SoundToggle />
+        <BackgroundMusic />
+      </div>
+    </div>
   );
 }
