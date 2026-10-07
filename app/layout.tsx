@@ -62,21 +62,21 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: siteConfig.themeColor,
+  themeColor: "#000000",
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  colorScheme: "light",
+  colorScheme: "dark",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html
       lang={siteConfig.language}
-      className={`${display.variable} ${body.variable} is-locked bg-background`}
+      className={`${display.variable} ${body.variable} is-locked bg-black`}
       style={themeCssVariables()}
     >
-      <body className="font-sans antialiased">
+      <body className="bg-black font-sans antialiased">
         {children}
         {process.env.NODE_ENV === "production" && <Analytics />}
       </body>
