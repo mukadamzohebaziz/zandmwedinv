@@ -9,11 +9,13 @@
  * - Interlocked gold wedding rings SVG graphic with dual swaying keyframe animations.
  * - Explicit Playfair Display SC inline font classes for initials, label, and percentage counter.
  * - Real-time asset tracking (lib/assets/assetStore.ts) bound to GSAP animations.
+ * - Off-screen video element pre-warming for immediate curtains playback on user tap.
  */
 
 import { useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { animations } from "@/config/animations";
+import { media } from "@/config/media";
 import { weddingData } from "@/config/weddingData";
 import { preloadAssets } from "@/lib/assets/assetStore";
 
@@ -23,6 +25,34 @@ import { preloadAssets } from "@/lib/assets/assetStore";
 const P = animations.preloader;
 const wait = (seconds: number) =>
   new Promise<void>((resolve) => window.setTimeout(resolve, seconds * 1000));
+
+/**
+ * Pre-warms an MP4 video element by loading its first frame into browser VRAM.
+ * Prevents black screen / buffer delays when the video component later mounts.
+ */
+const prewarmVideo = (url: string) => {
+  return new Promise<void>((resolve) => {
+    const video = document.createElement("video");
+    video.src = url;
+    video.preload = "auto";
+    video.muted = true;
+    video.playsInline = true;
+
+    video.load();
+
+    const onReady = () => {
+      video.removeEventListener("canplaythrough", onReady);
+      video.removeEventListener("error", onReady);
+      resolve();
+    };
+
+    video.addEventListener("canplaythrough", onReady);
+    video.addEventListener("error", onReady);
+
+    // Timeout safety net to ensure execution continues if load fails
+    setTimeout(resolve, 2000);
+  });
+};
 
 // Generate positioning data for floating background gold particles
 const PARTICLES = Array.from({ length: P.particleCount }, (_, i) => ({
@@ -116,6 +146,7 @@ export function WeddingPreloader({ onComplete }: Props) {
     // -------------------------------------------------------------------------
     Promise.all([
       Promise.race([preloadAssets(setProgress), wait(P.maxDuration)]),
+      prewarmVideo(media.video.curtains),
       wait(P.minDuration),
     ]).then(() => {
       if (cancelled) return;
@@ -157,7 +188,7 @@ export function WeddingPreloader({ onComplete }: Props) {
       <span className="sr-only">{weddingData.text.preloaderLabel}</span>
 
       {/* --------------------------------------------------------------------- */}
-      {/* 1. Ambient Floating Gold Dust Particles                                */}
+      {/* 1. Ambient Floating Gold Dust Particles                               */}
       {/* --------------------------------------------------------------------- */}
       <div ref={particlesRef} aria-hidden className="pointer-events-none absolute inset-0">
         {PARTICLES.map((p, i) => (
